@@ -1,0 +1,10 @@
+# .gitignore for IBM Energy Forecast Pipeline
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.ruff_cache/
+

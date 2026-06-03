@@ -1,0 +1,22 @@
+{
+    "target_variable": "electricity_spot_price",
+    "forecast_horizon_days": 14,
+    "retraining_day": 6,
+    "lag_hours": [24, 48, 168],
+    "rolling_windows_hours": [24, 72, 168],
+    "xgb_params": {
+        "n_estimators": 500,
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "early_stopping_rounds": 20
+    },
+    "cos_paths": {
+        "raw_data": "raw/",
+        "features": "features/",
+        "models": "models/",
+        "forecasts": "forecasts/"
+    }
+}
+
