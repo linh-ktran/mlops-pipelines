@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.features.feature_engineering import (
+from mlops_core.features import (
     add_cyclical_datetime_features,
     add_holiday_weekend_features,
     add_lag_features,
@@ -46,7 +46,7 @@ def test_holiday_weekend_features(sample_df):
 
 
 def test_lag_features(sample_df):
-    result = add_lag_features(sample_df, "electricity_spot_price", "timestamp_utc")
+    result = add_lag_features(sample_df, "electricity_spot_price")
     assert "electricity_spot_price_lag_24h" in result.columns
     assert "electricity_spot_price_lag_168h" in result.columns
     # First 168 rows should have NaN for the 168h lag

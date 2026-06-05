@@ -4,20 +4,28 @@ A collection of ML pipeline experiments to learn and test different MLOps platfo
 
 ## Projects
 
-| Project | Platform / Technique | Description |
-|---------|---------------------|-------------|
-| `aws-sagemaker-pipeline/` | AWS SageMaker + MLflow | End-to-end ML pipeline with SageMaker endpoints, Terraform infra |
-| `ibm-code-engine-pipeline/` | IBM Code Engine + COS | ML pipeline using IBM Cloud Code Engine and Cloud Object Storage |
+| Directory | Platform | Description |
+|-----------|----------|-------------|
+| `aws-sagemaker-pipeline/` | AWS SageMaker + MLflow | SageMaker endpoints, Terraform infra |
+| `ibm-code-engine-pipeline/` | IBM Code Engine + COS | Lightweight Python orchestrator |
+| `ibm-watsonx-pipeline/` | IBM watsonx.ai + COS | DAG orchestration, model registry, monitoring |
+| `shared/` | — | `mlops-core` library (features, training, storage, inference) |
 
-## Naming convention
+## Shared Library
 
-Projects are named by **platform/technique**, not by use case:
-`<platform>-<technique>-pipeline`
+All projects depend on `shared/` (`mlops-core`) for common logic:
 
-Examples: `ibm-watsonx-ml-pipeline`, `aws-sagemaker-pipeline`, `vertex-ai-pipeline`
+- **`mlops_core.features`** — cyclical time, holidays, lags, rolling stats
+- **`mlops_core.training`** — XGBoost train/evaluate with bias correction
+- **`mlops_core.storage`** — IBM COS client
+- **`mlops_core.inference`** — prediction with bias correction
+- **`mlops_core.testing`** — shared pytest fixtures
 
-## Adding a new project
+Usage in each project's `pyproject.toml`:
 
-Simply create a new directory at the root with its own `pyproject.toml` and dependencies.
-Each sub-project is self-contained with its own virtual environment.
+```toml
+dependencies = ["mlops-core[cos]"]
 
+[tool.uv.sources]
+mlops-core = { path = "../shared", editable = true }
+```
