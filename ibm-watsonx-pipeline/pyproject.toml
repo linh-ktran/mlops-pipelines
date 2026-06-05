@@ -1,0 +1,53 @@
+[project]
+name = "ibm-watsonx-pipeline"
+version = "0.1.0"
+description = "ML pipeline on IBM watsonx.ai — DAG orchestration, model saving, and deployment"
+authors = [{ name = "Linh Tran" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mlops-core[cos]",
+    "ibm-watsonx-ai>=1.1.0,<2.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "graphviz>=0.20,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0,<9.0.0",
+    "ruff>=0.5.0,<1.0.0",
+]
+
+[project.scripts]
+run-pipeline = "src.pipeline.orchestrator:main"
+run-training = "src.pipeline.orchestrator:run_training_only"
+run-inference = "src.pipeline.orchestrator:run_inference_only"
+show-dag = "src.pipeline.dag:main"
+
+[build-system]
+requires = ["hatchling>=1.0.0,<2.0.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.uv]
+# xgboost pulls nvidia-nccl-cu12 (~300 MB) — not needed for CPU inference
+override-dependencies = ["nvidia-nccl-cu12; python_version < '0'"]
+
+[tool.uv.sources]
+mlops-core = { path = "../shared", editable = true }
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
