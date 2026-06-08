@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+
+# Local storage (test artifacts)
+local_storage/
+
+# Cache
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Git
+.git/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment files (secrets injected via Code Engine secrets)
+.env
+
+# Test & dev files
+tests/
+dag_output/
+

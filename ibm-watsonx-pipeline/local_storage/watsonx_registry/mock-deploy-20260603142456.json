@@ -1,0 +1,8 @@
+{
+  "deployment_id": "mock-deploy-20260603142456",
+  "model_id": "mock-model-20260603142456",
+  "name": "energy-forecast-deployment",
+  "status": "ready",
+  "endpoint_url": "https://eu-de.ml.cloud.ibm.com/ml/v4/deployments/mock-deploy-20260603142456/predictions",
+  "created_at": "2026-06-03T14:24:56.295788+00:00"
+}
