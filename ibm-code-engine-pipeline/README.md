@@ -2,6 +2,8 @@
 
 Automated energy price forecasting pipeline running on IBM Cloud. Replaces an AWS Step Functions + SageMaker architecture with a simpler Python orchestrator on Code Engine.
 
+> **Use case:** aFRR Capacity Price Forecasting — see the [top-level README](../README.md#use-case-afrr-capacity-price-forecasting) for details.
+
 ## Architecture
 
 ```

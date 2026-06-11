@@ -2,18 +2,7 @@
 An end-to-end MLOps project covering training, experiment tracking, model serving, and deployment to AWS SageMaker.
 Built to understand what happens after the notebook — how models get versioned, served, and deployed in production.
 
-## Use Case: aFRR Capacity Price Forecasting
-This project forecasts **French aFRR capacity prices** using XGBoost time-series regression — inspired by a real production pipeline.
-
-**Problem:** Predict hourly capacity prices (EUR/MW) for up to 4 days ahead (horizons 1–4).
-
-**Approach:**
-- XGBoost regression with early stopping and bias correction
-- Lag features (1, 2, 3, 7, 14, 28 days), rolling statistics (7-day mean/min/max)
-- Exogenous inputs: FCR prices, consumption/gas/spot/solar/wind forecasts
-- Calendar features: French holidays, weekends
-- Per-horizon models (each horizon has its own trained model)
-- Chronological train/val split (no data leakage)
+> **Use case:** aFRR Capacity Price Forecasting — see the [top-level README](../README.md#use-case-afrr-capacity-price-forecasting) for details.
 
 ## Stack
 - **uv** — fast Python package manager and project tool

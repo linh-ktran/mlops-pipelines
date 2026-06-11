@@ -2,6 +2,22 @@
 
 A collection of ML pipeline experiments to learn and test different MLOps platforms and techniques.
 
+## Use Case: aFRR Capacity Price Forecasting
+
+All projects implement the same use case — forecasting **French aFRR capacity prices** using XGBoost time-series regression, inspired by a real production pipeline.
+
+**Problem:** Predict hourly capacity prices (EUR/MW) for up to 4 days ahead (horizons 1–4).
+
+**Approach:**
+- XGBoost regression with early stopping and bias correction
+- Lag features (1, 2, 3, 7, 14, 28 days), rolling statistics (7-day mean/min/max)
+- Exogenous inputs: FCR prices, consumption/gas/spot/solar/wind forecasts
+- Calendar features: French holidays, weekends
+- Per-horizon models (each horizon has its own trained model)
+- Chronological train/val split (no data leakage)
+
+Each project deploys the same model on a different platform to compare MLOps tooling and infrastructure patterns.
+
 ## Projects
 
 | Directory | Platform | Description |

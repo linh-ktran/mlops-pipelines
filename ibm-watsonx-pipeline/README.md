@@ -2,6 +2,8 @@
 
 Machine learning pipeline on IBM watsonx.ai with model registry integration, and online deployment.
 
+> **Use case:** aFRR Capacity Price Forecasting — see the [top-level README](../README.md#use-case-afrr-capacity-price-forecasting) for details.
+
 ## Key Features
 
 | Feature | Description |
