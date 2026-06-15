@@ -34,7 +34,6 @@ resource "aws_cloudwatch_metric_alarm" "endpoint_5xx_errors" {
 
   dimensions = {
     EndpointName = aws_sagemaker_endpoint.this.name
-    VariantName  = "AllTraffic"
   }
 
   alarm_actions = var.alarm_actions
