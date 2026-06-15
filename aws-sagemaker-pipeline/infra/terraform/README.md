@@ -1,22 +1,22 @@
-# Terraform Scaffold
+# Terraform
 
-This directory contains a minimal Terraform scaffold for:
+Bare-bones Terraform setup for the SageMaker deployment. Creates:
 
 - SageMaker model + endpoint config + endpoint
-- Optional EventBridge Scheduler trigger for a SageMaker Pipeline
-- CloudWatch alarms for pipeline failures and endpoint 5XX responses
+- EventBridge schedule to trigger the pipeline (optional)
+- CloudWatch alarms for pipeline failures and endpoint 5XX errors
 
-## Quick Validation
+## Validate
 
 ```bash
 terraform -chdir=infra/terraform init -backend=false
 terraform -chdir=infra/terraform validate
 ```
 
-## Plan (after filling variables)
+## Plan against a real account
 
 ```bash
 cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
+# fill in your values
 terraform -chdir=infra/terraform plan -var-file=terraform.tfvars
 ```
-

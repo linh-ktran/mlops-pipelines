@@ -1,10 +1,12 @@
-# IBM Cloud Code Engine — Energy Forecast Pipeline
+# IBM Code Engine — Energy Forecast Pipeline
 
-Automated energy price forecasting pipeline running on IBM Cloud. Replaces an AWS Step Functions + SageMaker architecture with a simpler Python orchestrator on Code Engine.
+Same forecasting model as the AWS version, but deployed on IBM Cloud with a much simpler setup. No managed ML service — just a Python script running as a Code Engine job, reading and writing to Cloud Object Storage.
 
-> **Use case:** aFRR Capacity Price Forecasting — see the [top-level README](../README.md#use-case-afrr-capacity-price-forecasting) for details.
+The idea was to see how far you can get without something like SageMaker or Step Functions.
 
-## Architecture
+> **Use case:** aFRR capacity price forecasting — details in the [top-level README](../README.md#the-use-case).
+
+## How it works
 
 ```
 Code Engine Cron Subscriptions
@@ -24,65 +26,62 @@ Code Engine Cron Subscriptions
  (data, models, forecasts)
 ```
 
-## IBM Cloud Services Used
+Pretty straightforward. A cron triggers the job, the job does everything sequentially, results go to COS. No DAG framework, no orchestrator service — just Python.
 
-| Service                     | Purpose                        | Resource             |
-| --------------------------- | ------------------------------ | -------------------- |
-| Code Engine (Jobs)          | Compute (scheduled execution)  | Project: `energy-forecast` |
-| Cloud Object Storage (COS)  | Store data, models, forecasts  | Bucket: `energy-forecast-bucket` |
-| Container Registry          | Docker image storage           | Namespace: `energy-ml` |
+## Services used
 
-## AWS → IBM Cloud Mapping
+| Service | What for |
+|---------|----------|
+| Code Engine (Jobs) | Running the pipeline on a schedule |
+| Cloud Object Storage | Storing everything (data, models, forecasts) |
+| Container Registry | Hosting the Docker image |
 
-| AWS                  | IBM Cloud                                   |
-| -------------------- | ------------------------------------------- |
-| Step Functions       | Python orchestrator inside Code Engine job   |
-| SageMaker Training   | XGBoost in Code Engine job                  |
-| Lambda (inference)   | Code Engine job                             |
-| EventBridge Schedule | Code Engine cron subscriptions              |
-| S3                   | IBM Cloud Object Storage                    |
+## If you're coming from AWS
+
+| AWS thing | IBM equivalent here |
+|-----------|-------------------|
+| Step Functions | Just a Python script in a Code Engine job |
+| SageMaker Training | XGBoost running inside the job |
+| Lambda (inference) | Same job, different mode |
+| EventBridge Schedule | Code Engine cron subscriptions |
+| S3 | IBM Cloud Object Storage |
 
 ## Schedules
 
-| Schedule             | Job                 | Cron          |
-| -------------------- | ------------------- | ------------- |
-| Daily inference      | `forecast-inference` | `0 8 * * *`  (08:00 UTC) |
-| Weekly training      | `forecast-training`  | `0 6 * * 0`  (Sunday 06:00 UTC) |
+- **Daily inference** at 08:00 UTC — generates tomorrow's forecasts
+- **Weekly training** on Sundays at 06:00 UTC — retrains the model on latest data
 
-## Quick Start (local development)
+## Local development
 
 ```bash
-# Install dependencies with uv
 uv sync
 
-# Set environment variables
+# set up your COS credentials
 cp .env.example .env
-# Fill in your IBM COS credentials
+# edit .env with your actual values
 
-# Run full pipeline
+# run the full pipeline
 uv run python -m src.orchestrator.main
 
-# Run inference only
+# or just one part
 uv run python -m src.orchestrator.main --mode inference
-
-# Run training only
 uv run python -m src.orchestrator.main --mode training
 
-# Run tests
+# tests
 uv run pytest tests/
 ```
 
-## Deploy to IBM Cloud Code Engine
+## Deploying to IBM Cloud
 
 ```bash
-# 1. Login and target
+# login
 ibmcloud login
 ibmcloud target -g Test -r eu-de
 
-# 2. Select the Code Engine project
+# pick your project
 ibmcloud ce project select --name energy-forecast
 
-# 3. Build and push container image
+# build and push the image
 ibmcloud ce buildrun submit \
   --name forecast-build \
   --source . \
@@ -91,10 +90,10 @@ ibmcloud ce buildrun submit \
   --registry-secret icr-secret \
   --wait
 
-# 4. Create secrets
+# store credentials as a secret
 ibmcloud ce secret create --name cos-credentials --from-env-file .env
 
-# 5. Create the training job
+# create the training job
 ibmcloud ce job create --name forecast-training \
   --image private.de.icr.io/energy-ml/energy-forecast:latest \
   --registry-secret icr-secret \
@@ -102,7 +101,7 @@ ibmcloud ce job create --name forecast-training \
   --argument "--mode" --argument "training" \
   --cpu 4 --memory 8G
 
-# 6. Create the inference job
+# create the inference job
 ibmcloud ce job create --name forecast-inference \
   --image private.de.icr.io/energy-ml/energy-forecast:latest \
   --registry-secret icr-secret \
@@ -110,37 +109,36 @@ ibmcloud ce job create --name forecast-inference \
   --argument "--mode" --argument "inference" \
   --cpu 2 --memory 4G
 
-# 7. Schedule daily inference (08:00 UTC)
+# set up the schedules
 ibmcloud ce subscription cron create --name daily-inference \
   --destination-type job \
   --destination forecast-inference \
   --schedule "0 8 * * *"
 
-# 8. Schedule weekly training (Sunday 06:00 UTC)
 ibmcloud ce subscription cron create --name weekly-training \
   --destination-type job \
   --destination forecast-training \
   --schedule "0 6 * * 0"
 ```
 
-## Operations
+## Day-to-day operations
 
 ```bash
-# List recent job runs
+# what ran recently?
 ibmcloud ce jobrun list
 
-# Trigger a manual run
+# trigger something manually
 ibmcloud ce jobrun submit --job forecast-training
 ibmcloud ce jobrun submit --job forecast-inference
 
-# View logs
+# check logs
 ibmcloud ce jobrun logs -f -n <run-name>
 
-# Check schedules
+# verify schedules
 ibmcloud ce subscription cron list
 ```
 
-## COS Bucket Structure
+## COS bucket layout
 
 ```
 energy-forecast-bucket/
@@ -155,7 +153,7 @@ energy-forecast-bucket/
     └── 2026_06_02.parquet
 ```
 
-## Project Structure
+## Project structure
 
 ```
 ibm-energy-forecast-pipeline/
@@ -172,7 +170,7 @@ ibm-energy-forecast-pipeline/
 │   └── fetch_real_data.py
 ├── src/
 │   ├── orchestrator/
-│   │   ├── main.py            ← entry point (replaces Step Functions)
+│   │   ├── main.py            ← entry point (this is the "Step Functions")
 │   │   └── config.py
 │   ├── features/
 │   │   └── feature_engineering.py
@@ -181,26 +179,26 @@ ibm-energy-forecast-pipeline/
 │   ├── inference/
 │   │   └── predictor.py
 │   └── storage/
-│       └── cos_client.py      ← IBM COS wrapper (replaces boto3/S3)
+│       └── cos_client.py      ← IBM COS wrapper
 └── tests/
     ├── test_features.py
     └── test_training.py
 ```
 
-## Environment Variables
+## Environment variables
 
-| Variable           | Description                               |
-| ------------------ | ----------------------------------------- |
-| `COS_ENDPOINT`     | IBM COS endpoint (`https://s3.eu-de.cloud-object-storage.appdomain.cloud`) |
-| `COS_API_KEY`      | IBM Cloud API key                         |
-| `COS_INSTANCE_CRN` | COS service instance CRN                 |
-| `COS_BUCKET`       | Bucket name (`energy-forecast-bucket`)    |
-| `PIPELINE_MODE`    | `full`, `training`, or `inference`        |
-| `RETRAINING_DAY`   | Day of week for retraining (0=Mon, 6=Sun) |
+| Variable | What it is |
+|----------|-----------|
+| `COS_ENDPOINT` | IBM COS endpoint (e.g. `https://s3.eu-de.cloud-object-storage.appdomain.cloud`) |
+| `COS_API_KEY` | Your IBM Cloud API key |
+| `COS_INSTANCE_CRN` | COS service instance CRN |
+| `COS_BUCKET` | Bucket name (`energy-forecast-bucket`) |
+| `PIPELINE_MODE` | `full`, `training`, or `inference` |
+| `RETRAINING_DAY` | Day of week for retraining (0=Mon, 6=Sun) |
 
-## Next Steps
+## What I'd do next
 
-- [ ] Replace synthetic data with real electricity prices (ENTSO-E or internal source)
-- [ ] Add more features (weather, load forecasts, etc.)
-- [ ] Add model monitoring (forecast vs actuals comparison)
-- [ ] Add Apache Airflow when scaling to multiple models
+- Hook up real electricity price data (ENTSO-E or similar)
+- More features (weather, load forecasts)
+- Model monitoring — compare forecasts against actuals once they arrive
+- Maybe Airflow if this grows to multiple models

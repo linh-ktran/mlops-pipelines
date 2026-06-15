@@ -1,18 +1,19 @@
 # IBM watsonx.ai — ML Pipeline with DAG Orchestration
 
-Machine learning pipeline on IBM watsonx.ai with model registry integration, and online deployment.
+Third iteration of the pipeline. This time on watsonx.ai, with a proper DAG executor, model registry, and online deployment. More "enterprise" than the Code Engine version — wanted to see what watsonx brings to the table.
 
-> **Use case:** aFRR Capacity Price Forecasting — see the [top-level README](../README.md#use-case-afrr-capacity-price-forecasting) for details.
+> **Use case:** aFRR capacity price forecasting — details in the [top-level README](../README.md#the-use-case).
 
-## Key Features
+## What's different here
 
-| Feature | Description |
-|---------|-------------|
-| **Model Registry** | Store and version models in watsonx.ai |
-| **Online Deployment** | Deploy models as REST endpoints via Watson Machine Learning |
-| **Step Tracking** | Per-node status, timing, and metadata |
-| **Monitoring** | Forecast vs actuals comparison with alerting |
-| **Resumability** | Skip already-completed steps on re-run |
+Compared to the Code Engine pipeline (which is just a sequential script), this one has:
+
+- **A real DAG** — steps have explicit dependencies, topologically sorted
+- **Model registry** — models go into watsonx.ai, not just a pickle in COS
+- **Online deployment** — REST endpoint via Watson Machine Learning
+- **Step tracking** — per-node status, timing, metadata
+- **Resumability** — if it crashes mid-way, re-run skips completed steps
+- **Monitoring** — forecast vs actuals comparison with alerting
 
 ## Architecture
 
@@ -31,103 +32,98 @@ Machine learning pipeline on IBM watsonx.ai with model registry integration, and
   (data, models, forecasts)      (model registry + deployment)
 ```
 
-## IBM Cloud Services Used
+## How it compares to the Code Engine version
 
-| Service | Purpose | Resource |
-|---------|---------|----------|
-| watsonx.ai (WML) | Model registry & online deployment | Project: `watsonx-pipeline` |
-| Cloud Object Storage | Store data, models, forecasts, DAG state | Bucket: `watsonx-pipeline-bucket` |
-| Code Engine (Jobs) | Compute (scheduled execution) | Project: `watsonx-pipeline` |
-| Container Registry | Docker image storage | Namespace: `watsonx-ml` |
-
-## Comparison: Code Engine Pipeline vs watsonx Pipeline
-
-| Aspect | Code Engine Pipeline | watsonx Pipeline |
-|--------|---------------------|------------------|
-| Orchestration | Sequential Python script | Explicit DAG with topological sort |
-| Model Storage | Pickle in COS only | COS + watsonx.ai model registry |
-| Deployment | N/A (batch only) | Online REST endpoint via WML |
+| | Code Engine Pipeline | This one |
+|--|---------------------|----------|
+| Orchestration | Sequential script | DAG with topological sort |
+| Model storage | Pickle in COS | COS + watsonx.ai registry |
+| Deployment | Batch only | Online REST endpoint via WML |
 | Visualization | None | Graphviz DAG rendering |
-| State Tracking | Logs only | Per-node status + JSON state file |
-| Resumability | Full re-run | Skip completed steps |
+| State tracking | Logs | Per-node status + JSON state file |
+| Resumability | Re-runs everything | Skips completed steps |
 
-## Quick Start (local development)
+## Local development
 
 ```bash
-# Install dependencies with uv
 uv sync
 
-# Set environment variables
+# credentials
 cp .env.example .env
-# Fill in your IBM watsonx + COS credentials
+# fill in watsonx + COS creds
 
-# View the pipeline DAG
+# see the DAG
 uv run python -m src.pipeline.dag
 
-# Run full pipeline
+# run everything
 uv run python -m src.pipeline.orchestrator
 
-# Run training only
+# just training or inference
 uv run python -m src.pipeline.orchestrator --mode training
-
-# Run inference only
 uv run python -m src.pipeline.orchestrator --mode inference
 
-# Run tests
+# tests
 uv run pytest tests/ -v
 
-# Generate sample data
+# generate sample data if you need it
 uv run python scripts/generate_sample_data.py
 ```
 
-## Pipeline DAG Modes
+## The DAG modes
 
-### Training DAG
+**Training:**
 ```
 load_data → feature_engineering → train_model → evaluate_model → save_to_cos → register_watsonx
 ```
 
-### Inference DAG
+**Inference:**
 ```
 load_data → feature_engineering → load_model → predict → save_forecasts
 ```
 
-### Full DAG
+**Full (train + deploy + predict):**
 ```
 load_data → feature_engineering → train_model → evaluate_model → save_to_cos
                                                                       ↓
                                   register_watsonx → deploy_model → predict → save_forecasts
 ```
 
-## Model Saving & Registry
+## Where models live
 
-Models are saved in two locations:
+Two places:
 
-1. **IBM COS** — Pickle file for fast local loading
-   - `models/model_latest.pkl` (always the most recent)
-   - `models/2026_06_03.pkl` (dated version)
+1. **COS** — pickle files for quick local loading
+   - `models/model_latest.pkl`
+   - `models/2026_06_03.pkl`
 
-2. **watsonx.ai Model Registry** — For deployment and governance
-   - Versioned model assets
-   - Metadata (metrics, feature names, training date)
-   - One-click deployment to online endpoint
+2. **watsonx.ai registry** — for deployment and governance
+   - Versioned assets with metadata (metrics, features, training date)
+   - Deploy to online endpoint with one command
 
-## Deploy to IBM Cloud
+## Deploying
 
 ```bash
-# Using the deployment script
+# automated
 chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
 
-# Or manually deploy a model to watsonx.ai
+# or manually
 uv run python scripts/watsonx_deploy_example.py
 ```
 
-## Next Steps
+## IBM Cloud services
 
-- [ ] Add watsonx.ai Prompt Lab integration for LLM-based anomaly explanation
-- [ ] Add model A/B testing with traffic splitting
-- [ ] Add Watson OpenScale for model fairness & drift monitoring
-- [ ] Add Apache Airflow DAG export for enterprise scheduling
-- [ ] Add multi-model pipeline (ensemble forecasting)
+| Service | Purpose |
+|---------|---------|
+| watsonx.ai (WML) | Model registry + online endpoints |
+| Cloud Object Storage | Data, models, forecasts, DAG state |
+| Code Engine (Jobs) | Scheduled compute |
+| Container Registry | Docker images |
 
+## Things I want to try next
+
+- watsonx.ai Prompt Lab for LLM-based anomaly explanations
+- A/B testing with traffic splitting between model versions
+- Watson OpenScale for fairness and drift monitoring
+- Export the DAG as an Airflow DAG for enterprise scheduling
+- Ensemble forecasting (multiple models, combined predictions)

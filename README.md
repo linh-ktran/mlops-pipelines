@@ -1,43 +1,40 @@
 # MLOps Pipelines
 
-A collection of ML pipeline experiments to learn and test different MLOps platforms and techniques.
+Me experimenting with different MLOps platforms by building the same forecasting pipeline on each one. The goal is to get hands-on experience with real deployment patterns, not just notebook prototypes.
 
-## Use Case: aFRR Capacity Price Forecasting
+## The use case
 
-All projects implement the same use case — forecasting **French aFRR capacity prices** using XGBoost time-series regression, inspired by a real production pipeline.
+All projects tackle the same problem: **forecasting French aFRR capacity prices** (EUR/MW), up to 4 days ahead. It's based on a real production system I worked on.
 
-**Problem:** Predict hourly capacity prices (EUR/MW) for up to 4 days ahead (horizons 1–4).
+The model is XGBoost regression with:
+- Lag features (1, 2, 3, 7, 14, 28 days) and 7-day rolling stats
+- Exogenous inputs — FCR prices, consumption/gas/spot/solar/wind forecasts
+- Calendar stuff — French holidays, weekends
+- One model per horizon (so 4 models total)
+- Chronological train/val split to avoid leakage
 
-**Approach:**
-- XGBoost regression with early stopping and bias correction
-- Lag features (1, 2, 3, 7, 14, 28 days), rolling statistics (7-day mean/min/max)
-- Exogenous inputs: FCR prices, consumption/gas/spot/solar/wind forecasts
-- Calendar features: French holidays, weekends
-- Per-horizon models (each horizon has its own trained model)
-- Chronological train/val split (no data leakage)
+Nothing fancy ML-wise — the interesting part is how each platform handles the deployment and orchestration differently.
 
-Each project deploys the same model on a different platform to compare MLOps tooling and infrastructure patterns.
+## What's in here
 
-## Projects
+| Directory | Platform | What it does |
+|-----------|----------|--------------|
+| `aws-sagemaker-pipeline/` | AWS SageMaker + MLflow | Endpoints, Terraform, the whole AWS dance |
+| `ibm-code-engine-pipeline/` | IBM Code Engine + COS | Simple Python orchestrator, no managed ML service |
+| `ibm-watsonx-pipeline/` | IBM watsonx.ai + COS | DAG-based, model registry, monitoring |
+| `shared/` | — | Common library so I don't repeat myself |
 
-| Directory | Platform | Description |
-|-----------|----------|-------------|
-| `aws-sagemaker-pipeline/` | AWS SageMaker + MLflow | SageMaker endpoints, Terraform infra |
-| `ibm-code-engine-pipeline/` | IBM Code Engine + COS | Lightweight Python orchestrator |
-| `ibm-watsonx-pipeline/` | IBM watsonx.ai + COS | DAG orchestration, model registry, monitoring |
-| `shared/` | — | `mlops-core` library (features, training, storage, inference) |
+## Shared library (`mlops-core`)
 
-## Shared Library
+All projects import from `shared/` to keep feature engineering, training, and inference logic in one place:
 
-All projects depend on `shared/` (`mlops-core`) for common logic:
+- `mlops_core.features` — cyclical time encoding, holidays, lags, rolling stats
+- `mlops_core.training` — XGBoost train/eval with bias correction
+- `mlops_core.storage` — IBM COS client
+- `mlops_core.inference` — prediction with bias correction
+- `mlops_core.testing` — shared pytest fixtures
 
-- **`mlops_core.features`** — cyclical time, holidays, lags, rolling stats
-- **`mlops_core.training`** — XGBoost train/evaluate with bias correction
-- **`mlops_core.storage`** — IBM COS client
-- **`mlops_core.inference`** — prediction with bias correction
-- **`mlops_core.testing`** — shared pytest fixtures
-
-Usage in each project's `pyproject.toml`:
+Each project references it as an editable dependency:
 
 ```toml
 dependencies = ["mlops-core[cos]"]

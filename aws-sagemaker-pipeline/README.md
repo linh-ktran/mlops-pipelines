@@ -1,21 +1,22 @@
-# mlops-serving-starter
-An end-to-end MLOps project covering training, experiment tracking, model serving, and deployment to AWS SageMaker.
-Built to understand what happens after the notebook — how models get versioned, served, and deployed in production.
+# aws-sagemaker-pipeline
 
-> **Use case:** aFRR Capacity Price Forecasting — see the [top-level README](../README.md#use-case-afrr-capacity-price-forecasting) for details.
+Using Sagemaker to deploy a simple XGBoost regression model for time-series forecasting.
 
-## Stack
-- **uv** — fast Python package manager and project tool
-- **Hatchling** — PEP 517 build backend
-- **Ruff** — linter and formatter
-- **XGBoost** — time-series regression models
-- **MLflow** — experiment tracking and model registry
-- **FastAPI** — REST API to serve predictions
-- **SageMaker** — deployment target (endpoint + pipeline)
-- **Terraform** — infrastructure for endpoint, schedule, alarms
-- **GitHub Actions** — CI (lint, tests, Terraform validation)
+> **Use case:** aFRR capacity price forecasting — details in the [top-level README](../README.md#the-use-case).
 
-## Project structure
+## The stack
+
+- **uv** for dependency management (fast, just works)
+- **XGBoost** for the actual model
+- **MLflow** for experiment tracking and model registry
+- **FastAPI** for serving predictions locally
+- **SageMaker** for AWS deployment (endpoints + pipelines)
+- **Terraform** for infra (endpoint, scheduled retraining, alarms)
+- **GitHub Actions** for CI
+- **Ruff** for linting/formatting
+
+## Project layout
+
 ```
 src/mlops_serving_starter/
 ├── training/
@@ -32,72 +33,78 @@ configs/
 infra/terraform/    # SageMaker endpoint + EventBridge schedule + CloudWatch alarms
 ```
 
-## Run it locally
+## Running locally
 
-Requires [uv](https://docs.astral.sh/uv/). See [installation options](https://docs.astral.sh/uv/getting-started/installation/) (Homebrew, pipx, standalone installer, etc.).
+You need [uv](https://docs.astral.sh/uv/) installed.
 
 ```bash
-make install          # uv sync --extra dev (creates .venv automatically)
+make install          # sets up .venv
 
-# generate synthetic time-series data
+# generate some fake time-series data to play with
 make generate-data
 
-# train a model for horizon 1 (day-ahead) and log it to MLflow
+# train a model (horizon 1 = day-ahead) and log it to MLflow
 make train
 
-# train for a specific hour (like the production system)
+# or be specific about the hour
 uv run python -m mlops_serving_starter.training.train --data data/sample.csv --horizon 1 --hour 10
 
-# open MLflow UI to compare runs
+# check your experiments
 make mlflow-ui   # → http://127.0.0.1:5001
 
-# serve the model (use the run_id from training)
+# serve it locally (grab the run_id from MLflow)
 make serve MODEL_URI="runs:/<RUN_ID>/model"
 
-# test the API (send pre-computed feature vector)
+# hit the API
 curl -X POST http://127.0.0.1:8000/predict \
   -H "Content-Type: application/json" \
   -d '{"records":[{"afrr_capacity_price_up_lag_1_h1":25.3,"afrr_capacity_price_up_lag_2_h1":24.1,"afrr_capacity_price_up_lag_3_h1":23.5,"afrr_capacity_price_up_lag_7_h1":22.0,"afrr_capacity_price_up_lag_14_h1":21.5,"afrr_capacity_price_up_lag_28_h1":20.0,"rolling_mean_7":23.4,"rolling_min_7":18.2,"rolling_max_7":30.1,"fcr_price_symmetric":15.0,"consumption_forecast":52000,"gas_price_forecast":32.5,"spot_price_forecast":55.0,"solar_forecast":2500,"wind_onshore_forecast":2100,"wind_offshore_forecast":900,"holiday_status":0,"weekend_status":0}]}'
 
-# run tests
 make test
 ```
 
-## Model Lifecycle (MLflow)
+## Model lifecycle (MLflow)
+
 ```bash
-# train all 4 horizons at once
+# train all 4 horizons
 make train-all
 
-# compare all registered model versions
+# compare registered model versions
 make compare
 
-# promote the best version to production
+# promote to production
 make promote VERSION=10 ALIAS=production
 
-# serve the production model (no run_id needed!)
+# serve the production model directly
 make serve MODEL_URI="models:/afrr-capacity-price-xgboost@production"
 ```
 
-Supported aliases: `staging`, `production`, `champion`, `challenger`
+Aliases I'm using: `staging`, `production`, `champion`, `challenger`
 
-## Deploy to SageMaker
+## Deploying to SageMaker
+
 ```bash
-# package the MLflow model into model.tar.gz
+# package the model
 make package-model MODEL_URI="runs:/<RUN_ID>/model"
-# dry-run — prints the AWS request payloads, no API calls
+
+# dry-run (just prints what it would do)
 make sagemaker-plan \
   IMAGE_URI=<ECR_IMAGE> \
   MODEL_DATA_URL=s3://<BUCKET>/artifacts/model.tar.gz \
   EXECUTION_ROLE_ARN=arn:aws:iam::<ACCOUNT>:role/<ROLE>
-# apply — creates or updates the endpoint
+
+# actually create/update the endpoint
 make sagemaker-apply \
   IMAGE_URI=<ECR_IMAGE> \
   MODEL_DATA_URL=s3://<BUCKET>/artifacts/model.tar.gz \
   EXECUTION_ROLE_ARN=arn:aws:iam::<ACCOUNT>:role/<ROLE> \
   AWS_REGION=<REGION>
 ```
+
 ## SageMaker Pipeline
-Generates a 4-step pipeline definition (processing → training → create model → batch transform) as JSON, ready to register in SageMaker.
+
+This generates a 4-step pipeline (processing → training → create model → batch transform) as JSON that you can register in SageMaker.
+
 ```bash
 make sagemaker-pipeline-plan \
   PIPELINE_NAME=my-pipeline \
@@ -109,37 +116,42 @@ make sagemaker-pipeline-plan \
   TRAINING_OUTPUT_S3_URI=s3://<BUCKET>/training-output \
   TRANSFORM_OUTPUT_S3_URI=s3://<BUCKET>/transform-output
 ```
+
 ## Infrastructure
+
 ```bash
 make terraform-init
 make terraform-validate
-# to plan against a real account
+
+# for a real plan
 cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
 terraform -chdir=infra/terraform plan -var-file=terraform.tfvars
 ```
-## Data Drift Monitoring
-Detects distribution shifts in forecast features using [Evidently](https://www.evidentlyai.com/). Compares a reference dataset (training data) against current production data.
+
+## Drift monitoring
+
+Using [Evidently](https://www.evidentlyai.com/) to catch distribution shifts in the input features. Basically comparing training data distributions against what's coming in now.
 
 ```bash
-# install monitoring dependencies
 make install-monitoring
 
-# run drift check (generates HTML report + JSON summary)
+# generate a report (HTML + JSON)
 make drift-check REFERENCE_DATA=data/sample.csv CURRENT_DATA=data/current.csv
 
-# CI mode — exits with code 1 if drift is detected
+# CI-friendly version (exits 1 if drift detected)
 make drift-check-ci REFERENCE_DATA=data/sample.csv CURRENT_DATA=data/current.csv
 ```
 
-**Monitored features:** FCR price, consumption/gas/spot/solar/wind forecasts, rolling stats (7-day mean/min/max), calendar (holiday/weekend).
+Monitors: FCR price, consumption/gas/spot/solar/wind forecasts, rolling stats, calendar features.
 
-**Statistical tests supported:** `ks` (default), `wasserstein`, `psi`, `kl_div`, `jensen_shannon`.
+Supports different statistical tests: `ks` (default), `wasserstein`, `psi`, `kl_div`, `jensen_shannon`.
 
-Reports are saved to `reports/` (HTML for visual inspection, JSON for CI/alerting).
+Reports go to `reports/`.
 
-## What I'd add next
-- Hyperparameter tuning with Bayesian optimization (BayesSearchCV + TimeSeriesSplit)
-- Train all 8 models per hour (2 targets × 4 horizons) in a single pipeline run
-- Model promotion flow (Staging → Production) in MLflow before deploying
-- Backtesting framework to evaluate rolling-window performance over time
-- The EventBridge schedule wired to a real retrain trigger
+## Ideas for later
+
+- Bayesian hyperparameter tuning (BayesSearchCV + TimeSeriesSplit)
+- Train all 8 models per hour (2 targets × 4 horizons) in one pipeline run
+- Proper staging → production promotion flow in MLflow
+- Backtesting framework for rolling-window performance evaluation
+- Wire up the EventBridge schedule to actually trigger retraining

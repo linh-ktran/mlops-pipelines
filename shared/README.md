@@ -1,36 +1,28 @@
 # mlops-core
 
-Shared ML utilities for energy price forecasting pipelines.
+The shared bits that all three pipelines use. Extracted this so I wouldn't copy-paste feature engineering and training logic everywhere.
 
-This package extracts common functionality used across all three pipeline implementations:
-- **AWS SageMaker Pipeline**
-- **IBM Code Engine Pipeline**
-- **IBM Watsonx Pipeline**
+## What's in it
 
-## Shared Modules
+| Module | Does what |
+|--------|-----------|
+| `mlops_core.features` | Time encoding, holidays, lags, rolling stats |
+| `mlops_core.training` | XGBoost training with chronological split and bias correction |
+| `mlops_core.storage` | IBM COS client |
+| `mlops_core.inference` | Prediction with bias correction applied |
 
-| Module | Description |
-|--------|-------------|
-| `mlops_core.features` | Cyclical datetime, holiday, lag, and rolling statistics features |
-| `mlops_core.training` | XGBoost training with chronological split, bias correction, and evaluation |
-| `mlops_core.storage` | IBM Cloud Object Storage client (COS) |
-| `mlops_core.inference` | Base prediction with bias correction |
+## Installing it
 
-## Installation
-
-From a sibling project directory:
+From any of the sibling project directories:
 
 ```bash
 uv add --editable ../shared
-```
 
-Or with COS storage support:
-
-```bash
+# or with COS support
 uv add --editable "../shared[cos]"
 ```
 
-## Usage
+## Using it
 
 ```python
 from mlops_core.features import (
@@ -43,4 +35,3 @@ from mlops_core.training import train_model, TrainedModel, evaluate_model
 from mlops_core.storage import COSClient
 from mlops_core.inference import predict_with_model
 ```
-
