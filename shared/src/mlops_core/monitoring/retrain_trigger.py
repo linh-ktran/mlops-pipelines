@@ -6,7 +6,6 @@ This can be run on a cron schedule (e.g., daily) or invoked by monitoring alerts
 """
 
 import json
-import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -43,11 +42,12 @@ class RetrainDecision:
 @dataclass
 class PerformanceThresholds:
     """Thresholds that trigger retraining when exceeded."""
-    max_mae: float = 8.0            # €/MW
-    max_bias: float = 5.0           # €/MW (absolute)
-    min_drift_features: int = 3     # number of drifted features
-    min_coverage: float = 0.6       # ±10€ coverage ratio
-    cooldown_hours: int = 24        # minimum hours between retrains
+
+    max_mae: float = 8.0  # €/MW
+    max_bias: float = 5.0  # €/MW (absolute)
+    min_drift_features: int = 3  # number of drifted features
+    min_coverage: float = 0.6  # ±10€ coverage ratio
+    cooldown_hours: int = 24  # minimum hours between retrains
 
 
 def evaluate_retraining(
@@ -80,7 +80,10 @@ def evaluate_retraining(
             return RetrainDecision(
                 should_retrain=False,
                 reason=None,
-                details={"blocked_by": "cooldown", "hours_remaining": round(thresholds.cooldown_hours - hours_since, 1)},
+                details={
+                    "blocked_by": "cooldown",
+                    "hours_remaining": round(thresholds.cooldown_hours - hours_since, 1),
+                },
                 timestamp=now.isoformat(),
             )
 
@@ -177,4 +180,3 @@ if __name__ == "__main__":
 
     if decision.should_retrain:
         exit(1)  # Non-zero exit = retraining needed (useful in CI/cron)
-

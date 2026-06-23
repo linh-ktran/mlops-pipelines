@@ -38,9 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Features we want to monitor for drift
 MONITORED_FEATURES: list[str] = (
-    FORECAST_FEATURES
-    + list(ROLLING_FEATURES.keys())
-    + ["holiday_status", "weekend_status"]
+    FORECAST_FEATURES + list(ROLLING_FEATURES.keys()) + ["holiday_status", "weekend_status"]
 )
 
 # Default threshold: fraction of columns that must drift to flag dataset-level drift
@@ -198,8 +196,10 @@ def main() -> None:
     )
     parser.add_argument("--json-only", action="store_true", help="Save JSON summary only (no HTML)")
     parser.add_argument(
-        "--drift-share", type=float, default=DEFAULT_DRIFT_SHARE,
-        help="Fraction of drifted columns to trigger dataset drift (default: 0.5)"
+        "--drift-share",
+        type=float,
+        default=DEFAULT_DRIFT_SHARE,
+        help="Fraction of drifted columns to trigger dataset drift (default: 0.5)",
     )
     parser.add_argument("--fail-on-drift", action="store_true", help="Exit with code 1 if drift detected")
 
@@ -221,4 +221,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

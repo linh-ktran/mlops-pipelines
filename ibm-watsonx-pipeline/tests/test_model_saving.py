@@ -1,14 +1,13 @@
 """Tests for model saving and loading (watsonx integration)."""
 
 import pickle
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
-import pandas as pd
 import pytest
 import xgboost as xgb
 
-from src.training.trainer import TrainedModel, train_model, save_model_to_cos
+from src.training.trainer import TrainedModel, save_model_to_cos
 from src.pipeline.config import PipelineConfig
 
 
@@ -68,4 +67,3 @@ def test_model_prediction_consistency(trained_model):
     preds1 = trained_model.model.predict(X_test)
     preds2 = trained_model.model.predict(X_test)
     np.testing.assert_array_equal(preds1, preds2)
-

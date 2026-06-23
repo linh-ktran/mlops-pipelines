@@ -154,4 +154,3 @@ class TestDAGBuilders:
         assert len(order) == 9
         # deploy must come after register
         assert order.index("register_watsonx") < order.index("deploy_model")
-

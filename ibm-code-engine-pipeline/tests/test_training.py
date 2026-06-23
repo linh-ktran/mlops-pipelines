@@ -1,11 +1,6 @@
 """Tests for the training module."""
 
-import numpy as np
-import pandas as pd
-import pytest
-
 from mlops_core.training import train_model
-from mlops_core.testing.fixtures import features_df  # noqa: F401
 
 
 def test_train_model(features_df):
@@ -25,4 +20,3 @@ def test_train_model_metrics_reasonable(features_df):
     # MAE should be less than the std of the target (model is better than guessing mean)
     target_std = features_df["electricity_spot_price"].std()
     assert result.metrics["mae"] < target_std * 2  # Generous bound
-

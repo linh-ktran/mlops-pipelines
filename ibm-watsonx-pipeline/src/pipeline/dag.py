@@ -137,14 +137,21 @@ class PipelineDAG:
         dot = graphviz.Digraph(
             name=self.name,
             format="png",
-            graph_attr={"rankdir": "TB", "label": f"Pipeline: {self.name}\\nRun: {self.run_id}", "labelloc": "t", "fontsize": "14"},
+            graph_attr={
+                "rankdir": "TB",
+                "label": f"Pipeline: {self.name}\\nRun: {self.run_id}",
+                "labelloc": "t",
+                "fontsize": "14",
+            },
         )
 
         for name, node in self.nodes.items():
             label = f"{name}\\n({node.status.value})"
             if node.duration_seconds is not None:
                 label += f"\\n{node.duration_seconds:.1f}s"
-            dot.node(name, label=label, style="filled", fillcolor=colors.get(node.status, "#E0E0E0"), shape="box")
+            dot.node(
+                name, label=label, style="filled", fillcolor=colors.get(node.status, "#E0E0E0"), shape="box"
+            )
 
         for name, node in self.nodes.items():
             for dep in node.dependencies:
@@ -161,7 +168,7 @@ class PipelineDAG:
         return dot.source
 
     def _to_dot(self) -> str:
-        lines = [f'digraph "{self.name}" {{', '  rankdir=TB;']
+        lines = [f'digraph "{self.name}" {{', "  rankdir=TB;"]
         for name, node in self.nodes.items():
             lines.append(f'  "{name}" [label="{name}\\n({node.status.value})"];')
         for name, node in self.nodes.items():
@@ -193,6 +200,7 @@ class PipelineDAG:
 
 
 # ─── DAG definitions ─────────────────────────────────────────────────────────
+
 
 def build_training_dag(pipeline_name: str = "watsonx-energy-forecast") -> PipelineDAG:
     dag = PipelineDAG(name=f"{pipeline_name}-training")

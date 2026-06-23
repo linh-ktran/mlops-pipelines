@@ -10,12 +10,6 @@ from __future__ import annotations
 import structlog
 
 from mlops_core.features import generate_features_pipeline  # noqa: F401
-from mlops_core.features import (
-    add_cyclical_datetime_features,
-    add_holiday_weekend_features,
-    add_lag_features,
-    add_rolling_statistics,
-)
 
 from src.orchestrator.config import PipelineConfig
 from src.storage.cos_client import COSClient
@@ -46,8 +40,5 @@ def _get_latest_raw_data_key(cos: COSClient, config: PipelineConfig) -> str:
     keys = cos.list_keys(config.raw_data_prefix)
     parquet_keys = [k for k in keys if k.endswith(".parquet")]
     if not parquet_keys:
-        raise FileNotFoundError(
-            f"No raw data files found in COS under prefix '{config.raw_data_prefix}'"
-        )
+        raise FileNotFoundError(f"No raw data files found in COS under prefix '{config.raw_data_prefix}'")
     return sorted(parquet_keys)[-1]
-

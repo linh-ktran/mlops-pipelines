@@ -161,4 +161,3 @@ def _normalize_timestamp_col(df: pd.DataFrame, expected_col: str) -> pd.DataFram
         if alt in df.columns:
             return df.rename(columns={alt: expected_col})
     return df
-

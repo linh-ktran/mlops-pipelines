@@ -1,11 +1,6 @@
 """Tests for the training module."""
 
-import numpy as np
-import pandas as pd
-import pytest
-
 from mlops_core.training import train_model, evaluate_model
-from mlops_core.testing.fixtures import features_df  # noqa: F401
 
 
 def test_train_model(features_df):
@@ -36,4 +31,3 @@ def test_evaluate_model(features_df):
     assert "full_r2" in evaluation
     assert "model_passed" in evaluation
     assert evaluation["full_mae"] > 0
-

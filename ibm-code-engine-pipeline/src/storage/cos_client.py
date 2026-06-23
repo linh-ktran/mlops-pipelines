@@ -16,4 +16,3 @@ class COSClient(_BaseCOSClient):
             instance_crn=config.cos_instance_crn,
             bucket=config.cos_bucket,
         )
-

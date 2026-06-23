@@ -106,4 +106,3 @@ class COSClient:
         """Generate a key with today's UTC date, e.g. models/2026_06_05.pkl"""
         date_str = datetime.now(timezone.utc).strftime("%Y_%m_%d")
         return f"{prefix}{date_str}{suffix}"
-

@@ -19,10 +19,12 @@ def sample_df():
     dates = pd.date_range("2026-01-01", periods=720, freq="h")  # 30 days
     np.random.seed(42)
     prices = 50 + 20 * np.sin(np.arange(720) * 2 * np.pi / 24) + np.random.normal(0, 5, 720)
-    return pd.DataFrame({
-        "timestamp_utc": dates,
-        "electricity_spot_price": prices,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp_utc": dates,
+            "electricity_spot_price": prices,
+        }
+    )
 
 
 def test_cyclical_features(sample_df):
@@ -65,4 +67,3 @@ def test_generate_features_drops_na(sample_df):
     assert not result.isna().any().any()
     # Should have fewer rows than input (lag/rolling window creates NaN at start)
     assert len(result) < len(sample_df)
-

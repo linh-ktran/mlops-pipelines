@@ -19,4 +19,3 @@ __all__ = [
     "add_rolling_statistics",
     "generate_features_pipeline",
 ]
-

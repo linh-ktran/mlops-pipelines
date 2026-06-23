@@ -20,25 +20,25 @@ jobs:
       - name: Lint shared library
         run: |
           cd shared
-          uv sync --dev
+          uv sync --extra dev
           uv run ruff check src/ tests/
           uv run ruff format --check src/ tests/
       - name: Lint AWS pipeline
         run: |
           cd aws-sagemaker-pipeline
-          uv sync --dev
+          uv sync --extra dev
           uv run ruff check src/ tests/
           uv run ruff format --check src/ tests/
       - name: Lint IBM Code Engine pipeline
         run: |
           cd ibm-code-engine-pipeline
-          uv sync --dev
+          uv sync --extra dev
           uv run ruff check src/ tests/
           uv run ruff format --check src/ tests/
       - name: Lint IBM watsonx pipeline
         run: |
           cd ibm-watsonx-pipeline
-          uv sync --dev
+          uv sync --extra dev
           uv run ruff check src/ tests/
           uv run ruff format --check src/ tests/
 
@@ -56,7 +56,7 @@ jobs:
       - name: Run shared library tests
         run: |
           cd shared
-          uv sync --dev
+          uv sync --extra dev
           uv run pytest tests/ -v --tb=short
 
   test-aws:
@@ -73,7 +73,7 @@ jobs:
       - name: Run AWS pipeline tests
         run: |
           cd aws-sagemaker-pipeline
-          uv sync --dev
+          uv sync --extra dev
           uv run pytest tests/ -v --tb=short -k "not sagemaker_deploy and not sagemaker_pipeline"
 
   test-code-engine:
@@ -90,7 +90,7 @@ jobs:
       - name: Run IBM Code Engine tests
         run: |
           cd ibm-code-engine-pipeline
-          uv sync --dev
+          uv sync --extra dev
           uv run pytest tests/ -v --tb=short
 
   test-watsonx:
@@ -107,7 +107,7 @@ jobs:
       - name: Run IBM watsonx tests
         run: |
           cd ibm-watsonx-pipeline
-          uv sync --dev
+          uv sync --extra dev
           uv run pytest tests/ -v --tb=short
 
   docker-build:

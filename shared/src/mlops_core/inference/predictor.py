@@ -48,14 +48,17 @@ def predict_with_model(
     predictions = np.clip(raw_predictions + trained_model.bias_correction, a_min=0, a_max=None)
 
     # Build forecast DataFrame
-    forecast_df = pd.DataFrame({
-        "timestamp_utc": (
-            features_df[timestamp_col] if timestamp_col in features_df.columns
-            else range(len(predictions))
-        ),
-        "forecast_value": predictions,
-        "forecast_issued_at": datetime.now(timezone.utc).isoformat(),
-    })
+    forecast_df = pd.DataFrame(
+        {
+            "timestamp_utc": (
+                features_df[timestamp_col]
+                if timestamp_col in features_df.columns
+                else range(len(predictions))
+            ),
+            "forecast_value": predictions,
+            "forecast_issued_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
     # Attach actuals if available (useful for drift monitoring)
     if target_variable and target_variable in features_df.columns:
@@ -63,4 +66,3 @@ def predict_with_model(
 
     logger.info("inference.predictions_generated", rows=len(forecast_df))
     return forecast_df
-

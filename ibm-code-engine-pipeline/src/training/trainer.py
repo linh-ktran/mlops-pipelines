@@ -37,4 +37,3 @@ def save_model(cos: COSClient, trained_model: TrainedModel, config: PipelineConf
 
     logger.info("training.model_saved", dated_key=dated_key, latest_key=latest_key)
     return dated_key
-

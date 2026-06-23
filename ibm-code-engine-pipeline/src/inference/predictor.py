@@ -27,9 +27,7 @@ def predict(cos: COSClient, features_df: pd.DataFrame, config: PipelineConfig) -
         bias_correction=trained_model.bias_correction,
     )
 
-    return predict_with_model(
-        trained_model, features_df, target_variable=config.target_variable
-    )
+    return predict_with_model(trained_model, features_df, target_variable=config.target_variable)
 
 
 def save_forecasts(cos: COSClient, forecasts_df: pd.DataFrame, config: PipelineConfig) -> str:
@@ -56,4 +54,3 @@ def _load_latest_model(cos: COSClient, config: PipelineConfig) -> TrainedModel:
         )
     logger.info("inference.using_fallback_model", key=fallback_key)
     return cos.read_pickle(fallback_key)
-

@@ -54,9 +54,7 @@ class LocalStorageClient:
         prefix_path = self.base_dir / prefix
         if not prefix_path.exists():
             return []
-        return sorted(
-            str(p.relative_to(self.base_dir)) for p in prefix_path.rglob("*") if p.is_file()
-        )
+        return sorted(str(p.relative_to(self.base_dir)) for p in prefix_path.rglob("*") if p.is_file())
 
     def get_latest_key(self, prefix: str, suffix: str = ".pkl") -> str | None:
         keys = [k for k in self.list_keys(prefix) if k.endswith(suffix)]

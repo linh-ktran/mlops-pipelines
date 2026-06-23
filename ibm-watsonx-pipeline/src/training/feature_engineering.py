@@ -6,12 +6,6 @@ import pandas as pd
 import structlog
 
 from mlops_core.features import generate_features_pipeline  # noqa: F401
-from mlops_core.features import (
-    add_cyclical_datetime_features,
-    add_holiday_weekend_features,
-    add_lag_features,
-    add_rolling_statistics,
-)
 
 from src.pipeline.config import PipelineConfig
 

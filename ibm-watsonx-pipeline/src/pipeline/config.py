@@ -35,14 +35,16 @@ class PipelineConfig:
     dag_prefix: str = "pipeline-metadata/dag/"
 
     # XGBoost
-    xgb_params: dict = field(default_factory=lambda: {
-        "n_estimators": 500,
-        "max_depth": 6,
-        "learning_rate": 0.05,
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
-        "early_stopping_rounds": 20,
-    })
+    xgb_params: dict = field(
+        default_factory=lambda: {
+            "n_estimators": 500,
+            "max_depth": 6,
+            "learning_rate": 0.05,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "early_stopping_rounds": 20,
+        }
+    )
 
     # watsonx deployment
     deployment_name: str = "energy-forecast-deployment"

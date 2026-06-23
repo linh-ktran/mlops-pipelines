@@ -63,10 +63,7 @@ def train_model(
 
     # Determine feature columns
     all_exclude = _EXCLUDE_COLS | (exclude_cols or set())
-    feature_cols = [
-        col for col in features_df.columns
-        if col not in all_exclude and col != target_variable
-    ]
+    feature_cols = [col for col in features_df.columns if col not in all_exclude and col != target_variable]
 
     X = features_df[feature_cols]
     y = features_df[target_variable]
@@ -153,4 +150,3 @@ def evaluate_model(
         "val_rmse": trained_model.metrics["rmse"],
         "model_passed": bool(trained_model.metrics["mae"] < y.std() * 1.5),
     }
-

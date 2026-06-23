@@ -21,16 +21,20 @@ log = structlog.get_logger(__name__)
 def create_storage_client(config: PipelineConfig, local: bool = False):
     if local:
         from src.storage.local_storage import LocalStorageClient
+
         return LocalStorageClient(config)
     from src.storage.cos_client import COSClient
+
     return COSClient(config)
 
 
 def create_watsonx_client(config: PipelineConfig, local: bool = False):
     if local:
         from src.storage.mock_watsonx import MockWatsonxClient
+
         return MockWatsonxClient(config)
     from src.storage.watsonx_client import WatsonxClient
+
     return WatsonxClient(config)
 
 
@@ -99,6 +103,7 @@ class PipelineExecutor:
 
             case "save_to_cos":
                 from src.training.trainer import save_model_to_cos
+
                 key = save_model_to_cos(self.cos, self._ctx["trained_model"], self.config)
                 self._ctx["model_cos_key"] = key
                 return {"cos_key": key}
@@ -115,6 +120,7 @@ class PipelineExecutor:
 
             case "load_model":
                 from src.inference.predictor import load_model
+
                 self._ctx["trained_model"] = load_model(self.cos, self.config)
                 return {"model_loaded": True}
 
@@ -142,6 +148,7 @@ class PipelineExecutor:
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────
+
 
 def run_full_pipeline(config: PipelineConfig | None = None, local: bool = False) -> dict:
     config = config or PipelineConfig.from_env()
@@ -179,6 +186,7 @@ def main():
 
     if config.mode == "dag":
         from src.pipeline.dag import main as dag_main
+
         dag_main()
         return
 

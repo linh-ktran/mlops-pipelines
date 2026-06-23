@@ -30,9 +30,7 @@ def load_model(cos, config: PipelineConfig) -> TrainedModel:
 
 def predict(trained_model: TrainedModel, features_df, config: PipelineConfig):
     """Generate forecasts with bias correction using shared predict logic."""
-    return predict_with_model(
-        trained_model, features_df, target_variable=config.target_variable
-    )
+    return predict_with_model(trained_model, features_df, target_variable=config.target_variable)
 
 
 def save_forecasts(cos, forecasts_df, config: PipelineConfig) -> str:

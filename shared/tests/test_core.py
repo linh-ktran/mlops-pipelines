@@ -1,9 +1,5 @@
 """Tests for mlops_core shared library."""
 
-import numpy as np
-import pandas as pd
-import pytest
-
 from mlops_core.features import (
     add_cyclical_datetime_features,
     add_holiday_weekend_features,
@@ -11,9 +7,8 @@ from mlops_core.features import (
     add_rolling_statistics,
     generate_features_pipeline,
 )
-from mlops_core.training import TrainedModel, evaluate_model, train_model
+from mlops_core.training import evaluate_model, train_model
 from mlops_core.inference import predict_with_model
-from mlops_core.testing.fixtures import features_df, raw_df  # noqa: F401
 
 
 class TestFeatureEngineering:
@@ -80,12 +75,9 @@ class TestTraining:
 class TestInference:
     def test_predict_with_model(self, features_df):
         trained = train_model(features_df, "electricity_spot_price")
-        forecasts = predict_with_model(
-            trained, features_df, target_variable="electricity_spot_price"
-        )
+        forecasts = predict_with_model(trained, features_df, target_variable="electricity_spot_price")
         assert "forecast_value" in forecasts.columns
         assert "timestamp_utc" in forecasts.columns
         assert "actual_value" in forecasts.columns
         assert len(forecasts) == len(features_df)
         assert (forecasts["forecast_value"] >= 0).all()  # Clipped at 0
-
