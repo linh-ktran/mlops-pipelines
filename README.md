@@ -42,3 +42,32 @@ dependencies = ["mlops-core[cos]"]
 [tool.uv.sources]
 mlops-core = { path = "../shared", editable = true }
 ```
+
+## Operational extras
+
+| Component | What it does |
+|-----------|--------------|
+| `.github/workflows/ci.yml` | Lint → Test → Docker build on every push/PR |
+| `.pre-commit-config.yaml` | Ruff, secret scanning, commit hygiene |
+| `dashboard/` | Streamlit app — predictions vs actuals, drift heatmap, alerts |
+| `shared/.../monitoring/retrain_trigger.py` | Automated retraining decision engine with cooldown logic |
+
+## Running the dashboard
+
+```bash
+cd dashboard
+uv sync
+uv run streamlit run app.py
+```
+
+![Dashboard screenshot](docs/dashboard_screenshot_1.png)
+![Dashboard screenshot](docs/dashboard_screenshot_2.png)
+
+## What's next
+
+- [ ] A/B testing framework (champion vs challenger model routing)
+- [ ] DVC for data versioning and experiment reproducibility
+- [ ] Grafana + Prometheus for latency/throughput monitoring
+- [ ] Slack/Teams webhook integration for drift alerts
+- [ ] Cost tracking per inference endpoint
+

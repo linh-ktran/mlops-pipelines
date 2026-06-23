@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lint shared library
+        run: |
+          cd shared
+          uv sync --dev
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+      - name: Lint AWS pipeline
+        run: |
+          cd aws-sagemaker-pipeline
+          uv sync --dev
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+      - name: Lint IBM Code Engine pipeline
+        run: |
+          cd ibm-code-engine-pipeline
+          uv sync --dev
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+      - name: Lint IBM watsonx pipeline
+        run: |
+          cd ibm-watsonx-pipeline
+          uv sync --dev
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
+
+  test-shared:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run shared library tests
+        run: |
+          cd shared
+          uv sync --dev
+          uv run pytest tests/ -v --tb=short
+
+  test-aws:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run AWS pipeline tests
+        run: |
+          cd aws-sagemaker-pipeline
+          uv sync --dev
+          uv run pytest tests/ -v --tb=short -k "not sagemaker_deploy and not sagemaker_pipeline"
+
+  test-code-engine:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run IBM Code Engine tests
+        run: |
+          cd ibm-code-engine-pipeline
+          uv sync --dev
+          uv run pytest tests/ -v --tb=short
+
+  test-watsonx:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run IBM watsonx tests
+        run: |
+          cd ibm-watsonx-pipeline
+          uv sync --dev
+          uv run pytest tests/ -v --tb=short
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [test-shared, test-aws, test-code-engine, test-watsonx]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        pipeline:
+          - aws-sagemaker-pipeline
+          - ibm-code-engine-pipeline
+          - ibm-watsonx-pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build ${{ matrix.pipeline }} image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.pipeline }}
+          push: false
+          tags: ${{ matrix.pipeline }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+

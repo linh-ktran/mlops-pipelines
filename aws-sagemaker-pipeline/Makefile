@@ -29,7 +29,7 @@ CURRENT_DATA ?= data/current.csv
 DRIFT_OUTPUT ?= reports/drift_report.html
 DRIFT_SHARE ?= 0.5
 
-.PHONY: ensure-uv install install-aws install-monitoring lint test drift-check generate-data train train-all promote compare mlflow-ui serve package-model sagemaker-plan sagemaker-apply sagemaker-pipeline-plan sagemaker-pipeline-apply terraform-init terraform-validate
+.PHONY: ensure-uv install install-aws install-monitoring lint test drift-check generate-data train train-all promote compare mlflow-ui serve package-model sagemaker-plan sagemaker-apply sagemaker-pipeline-plan sagemaker-pipeline-apply terraform-init terraform-validate terraform-plan deploy-dev teardown-dev
 
 ensure-uv:
 	@command -v uv >/dev/null 2>&1 || { echo "Installing uv..."; curl -LsSf https://astral.sh/uv/install.sh | sh; }
@@ -96,6 +96,18 @@ terraform-init:
 
 terraform-validate:
 	terraform -chdir=infra/terraform validate
+
+terraform-plan:
+	terraform -chdir=infra/terraform plan -var-file=terraform.tfvars
+
+deploy-dev:
+	@echo "Deploying serverless endpoint to dev..."
+	terraform -chdir=infra/terraform init
+	terraform -chdir=infra/terraform apply -var-file=terraform.tfvars -auto-approve
+
+teardown-dev:
+	@echo "Tearing down dev environment..."
+	terraform -chdir=infra/terraform destroy -var-file=terraform.tfvars -auto-approve
 
 install-monitoring: ensure-uv
 	uv sync --frozen --extra dev --extra monitoring

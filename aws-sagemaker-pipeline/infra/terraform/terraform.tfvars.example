@@ -8,3 +8,12 @@ schedule_enabled            = false
 alarm_actions               = []
 ok_actions                  = []
 
+# Serverless inference (default) — scales to zero, pay per request
+use_serverless               = true
+serverless_max_concurrency   = 5
+serverless_memory_size_in_mb = 2048
+
+# Real-time inference — uncomment if you need always-on endpoint
+# use_serverless                  = false
+# endpoint_instance_type          = "ml.m5.large"
+# endpoint_initial_instance_count = 1

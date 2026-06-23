@@ -12,8 +12,26 @@ resource "aws_sagemaker_model" "this" {
   }
 }
 
-resource "aws_sagemaker_endpoint_configuration" "this" {
-  name = local.endpoint_config_name
+# --- Serverless endpoint config ---
+resource "aws_sagemaker_endpoint_configuration" "serverless" {
+  count = var.use_serverless ? 1 : 0
+  name  = "${local.endpoint_config_name}-serverless"
+
+  production_variants {
+    variant_name = "AllTraffic"
+    model_name   = aws_sagemaker_model.this.name
+
+    serverless_config {
+      max_concurrency   = var.serverless_max_concurrency
+      memory_size_in_mb = var.serverless_memory_size_in_mb
+    }
+  }
+}
+
+# --- Real-time endpoint config ---
+resource "aws_sagemaker_endpoint_configuration" "realtime" {
+  count = var.use_serverless ? 0 : 1
+  name  = local.endpoint_config_name
 
   production_variants {
     variant_name           = "AllTraffic"
@@ -25,7 +43,10 @@ resource "aws_sagemaker_endpoint_configuration" "this" {
 }
 
 resource "aws_sagemaker_endpoint" "this" {
-  name                 = local.endpoint_name
-  endpoint_config_name = aws_sagemaker_endpoint_configuration.this.name
+  name = local.endpoint_name
+  endpoint_config_name = (
+    var.use_serverless
+    ? aws_sagemaker_endpoint_configuration.serverless[0].name
+    : aws_sagemaker_endpoint_configuration.realtime[0].name
+  )
 }
-

@@ -24,15 +24,33 @@ variable "image_uri" {
   description = "ECR image URI for inference container"
 }
 
+variable "use_serverless" {
+  type        = bool
+  description = "Use serverless inference (scales to zero, pay per request)"
+  default     = true
+}
+
+variable "serverless_max_concurrency" {
+  type        = number
+  description = "Max concurrent invocations for serverless endpoint"
+  default     = 5
+}
+
+variable "serverless_memory_size_in_mb" {
+  type        = number
+  description = "Memory size for serverless endpoint (1024, 2048, 3072, 4096, 5120, 6144)"
+  default     = 2048
+}
+
 variable "endpoint_instance_type" {
   type        = string
-  description = "SageMaker endpoint instance type"
+  description = "SageMaker endpoint instance type (used when use_serverless = false)"
   default     = "ml.m5.large"
 }
 
 variable "endpoint_initial_instance_count" {
   type        = number
-  description = "Number of endpoint instances"
+  description = "Number of endpoint instances (used when use_serverless = false)"
   default     = 1
 }
 
