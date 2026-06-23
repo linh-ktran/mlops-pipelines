@@ -4,9 +4,12 @@ WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY pyproject.toml uv.lock README.md ./
-COPY src ./src
-COPY configs ./configs
+# Copy shared library (dependency)
+COPY shared/ /shared/
+
+COPY aws-sagemaker-pipeline/pyproject.toml aws-sagemaker-pipeline/uv.lock aws-sagemaker-pipeline/README.md ./
+COPY aws-sagemaker-pipeline/src ./src
+COPY aws-sagemaker-pipeline/configs ./configs
 
 RUN uv sync --frozen --no-dev
 

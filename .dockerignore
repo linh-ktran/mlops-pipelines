@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Virtual environments
+**/.venv
+**/__pycache__
+
+# IDE
+.idea
+.vscode
+
+# Test/dev artifacts
+**/mlruns
+**/.pytest_cache
+**/.ruff_cache
+**/htmlcov
+
+# Data (don't bake into images)
+**/data
+**/artifacts
+
+# Dashboard (not needed in pipeline images)
+dashboard
+docs
+
