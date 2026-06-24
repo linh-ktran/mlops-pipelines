@@ -4,8 +4,10 @@ WORKDIR /opt/program
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY pyproject.toml uv.lock ./
-COPY src ./src
+COPY aws-sagemaker-pipeline/pyproject.toml aws-sagemaker-pipeline/uv.lock ./
+COPY aws-sagemaker-pipeline/README.md ./README.md
+COPY aws-sagemaker-pipeline/src ./src
+COPY shared /opt/shared
 RUN uv sync --frozen --no-dev
 
 ENV PYTHONPATH=/opt/program/src
@@ -13,7 +15,7 @@ ENV PYTHONPATH=/opt/program/src
 # SageMaker unpacks model.tar.gz to /opt/ml/model
 ENV MODEL_DIR=/opt/ml/model
 
-COPY docker/serve ./serve
+COPY aws-sagemaker-pipeline/docker/serve ./serve
 RUN chmod +x ./serve
 
 EXPOSE 8080
