@@ -14,15 +14,22 @@ class _ResourceInUseError(Exception):
         super().__init__("Pipeline already exists")
 
 
+class _ValidationError(Exception):
+    def __init__(self):
+        self.response = {"Error": {"Code": "ValidationException"}}
+        super().__init__("Pipeline names must be unique")
+
+
 class _FakeSageMakerClient:
-    def __init__(self, *, exists: bool = False):
+    def __init__(self, *, exists: bool = False, error_cls=None):
         self.exists = exists
+        self._error_cls = error_cls or _ResourceInUseError
         self.calls = []
 
     def create_pipeline(self, **kwargs):
         self.calls.append(("create_pipeline", kwargs))
         if self.exists:
-            raise _ResourceInUseError()
+            raise self._error_cls()
         return {"PipelineArn": "arn:aws:sagemaker:region:acct:pipeline/example"}
 
     def update_pipeline(self, **kwargs):
@@ -109,3 +116,17 @@ def test_upsert_pipeline_apply_updates_when_exists():
 
     assert result["action"] == "updated"
     assert [name for name, _ in client.calls] == ["create_pipeline", "update_pipeline"]
+
+
+def test_upsert_pipeline_apply_updates_when_validation_exception():
+    requests = {
+        "create_pipeline": {"PipelineName": "demo"},
+        "update_pipeline": {"PipelineName": "demo"},
+    }
+    client = _FakeSageMakerClient(exists=True, error_cls=_ValidationError)
+
+    result = upsert_pipeline(sagemaker_client=client, requests=requests, apply=True)
+
+    assert result["action"] == "updated"
+    assert [name for name, _ in client.calls] == ["create_pipeline", "update_pipeline"]
+

@@ -84,6 +84,12 @@ def build_pipeline_definition(
                         "TrainingInputMode": "File",
                         "TrainingImage": training_image_uri,
                     },
+                    "HyperParameters": {
+                        "objective": "reg:squarederror",
+                        "num_round": "50",
+                        "max_depth": "5",
+                        "eta": "0.2",
+                    },
                     "RoleArn": role_arn,
                     "OutputDataConfig": {"S3OutputPath": training_output_s3_uri},
                     "StoppingCondition": {"MaxRuntimeInSeconds": 3600},
@@ -199,7 +205,7 @@ def upsert_pipeline(
         action = "created"
     except Exception as exc:  # pragma: no cover
         code = _error_code_from_exception(exc)
-        if code == "ResourceInUse":
+        if code in ("ResourceInUse", "ValidationException"):
             response = sagemaker_client.update_pipeline(**requests["update_pipeline"])
             action = "updated"
         else:
