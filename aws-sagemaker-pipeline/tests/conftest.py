@@ -59,4 +59,3 @@ class FakeModel:
 def fake_model():
     """A fake model instance for testing."""
     return FakeModel()
-
