@@ -71,37 +71,76 @@ def ping():
         return Response(status_code=503, content=str(exc))
 
 
+MAX_BATCH_SIZE = int(os.environ.get("MAX_BATCH_SIZE", "1000"))
+
+
 @app.post("/invocations")
 async def invocations(request: Request):
     """Prediction endpoint — receives feature records, returns forecasts."""
     content_type = request.headers.get("content-type", "")
     body = await request.body()
 
-    if "application/json" in content_type:
-        payload = json.loads(body)
-        df = pd.DataFrame(payload["records"])
-    elif "text/csv" in content_type:
-        df = pd.read_csv(StringIO(body.decode("utf-8")))
-    else:
-        return Response(status_code=415, content=f"Unsupported content type: {content_type}")
+    try:
+        if "application/json" in content_type:
+            payload = json.loads(body)
+            if "records" not in payload:
+                return Response(
+                    status_code=400,
+                    content=json.dumps({"error": "Missing 'records' key in JSON payload"}),
+                    media_type="application/json",
+                )
+            df = pd.DataFrame(payload["records"])
+        elif "text/csv" in content_type:
+            df = pd.read_csv(StringIO(body.decode("utf-8")))
+        else:
+            return Response(status_code=415, content=f"Unsupported content type: {content_type}")
 
-    model = load_model()
+        if df.empty:
+            return Response(
+                status_code=400,
+                content=json.dumps({"error": "Empty input data"}),
+                media_type="application/json",
+            )
 
-    # Match column types to what the model expects
-    if model.metadata and model.metadata.signature:
-        for col_spec in model.metadata.signature.inputs.inputs:
-            if col_spec.name not in df.columns:
-                continue
-            if col_spec.type.name == "double":
-                df[col_spec.name] = df[col_spec.name].astype(np.float64)
-            elif col_spec.type.name == "long":
-                df[col_spec.name] = df[col_spec.name].astype(np.int64)
+        if len(df) > MAX_BATCH_SIZE:
+            return Response(
+                status_code=400,
+                content=json.dumps({"error": f"Batch size {len(df)} exceeds limit of {MAX_BATCH_SIZE}"}),
+                media_type="application/json",
+            )
 
-    predictions = model.predict(df)
-    predictions = [max(0.0, float(p)) for p in predictions]
+        model = load_model()
 
-    return Response(
-        status_code=200,
-        content=json.dumps({"predictions": predictions}),
-        media_type="application/json",
-    )
+        # Match column types to what the model expects
+        if model.metadata and model.metadata.signature:
+            for col_spec in model.metadata.signature.inputs.inputs:
+                if col_spec.name not in df.columns:
+                    continue
+                if col_spec.type.name == "double":
+                    df[col_spec.name] = df[col_spec.name].astype(np.float64)
+                elif col_spec.type.name == "long":
+                    df[col_spec.name] = df[col_spec.name].astype(np.int64)
+
+        predictions = model.predict(df)
+        predictions = [max(0.0, float(p)) for p in predictions]
+
+        return Response(
+            status_code=200,
+            content=json.dumps({"predictions": predictions}),
+            media_type="application/json",
+        )
+
+    except json.JSONDecodeError as exc:
+        logger.warning("Invalid JSON payload: %s", exc)
+        return Response(
+            status_code=400,
+            content=json.dumps({"error": "Invalid JSON payload"}),
+            media_type="application/json",
+        )
+    except Exception as exc:
+        logger.error("Prediction failed: %s\n%s", exc, traceback.format_exc())
+        return Response(
+            status_code=500,
+            content=json.dumps({"error": "Internal prediction error"}),
+            media_type="application/json",
+        )

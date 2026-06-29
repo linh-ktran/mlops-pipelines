@@ -1,13 +1,19 @@
 FROM python:3.12-slim
 
+LABEL maintainer="mlops-team" \
+      description="SageMaker inference container for electricity price forecasting"
+
 WORKDIR /opt/program
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Install dependencies first (better layer caching)
 COPY aws-sagemaker-pipeline/pyproject.toml aws-sagemaker-pipeline/uv.lock ./
 COPY aws-sagemaker-pipeline/README.md ./README.md
-COPY aws-sagemaker-pipeline/src ./src
 COPY shared /opt/shared
+RUN uv sync --frozen --no-dev --no-install-project || true
+
+COPY aws-sagemaker-pipeline/src ./src
 RUN uv sync --frozen --no-dev
 
 ENV PYTHONPATH=/opt/program/src
@@ -19,5 +25,9 @@ COPY aws-sagemaker-pipeline/docker/serve ./serve
 RUN chmod +x ./serve
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/ping')" || exit 1
+
 ENTRYPOINT ["./serve"]
 
